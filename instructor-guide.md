@@ -51,7 +51,7 @@ graph LR
 |-----------------------------------|------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
 | **Action fails on "Permissions"** | The GITHUB_TOKEN doesn't have write access to the repository or packages.    | Navigate to **Settings > Actions > General** and ensure "Read and write permissions" are enabled.                           |
 | **Docker Build is slow**          | Not utilizing Docker Layer Caching in the CI runner.                         | Introduce the `docker/build-push-action` with cache-from and cache-to parameters.                                           |
-| **YAML Syntax Errors**            | Incorrect indentation (common with mid-career pros new to YAML).             | Use a VS Code YAML extension or an online linter. Remind them: "Spaces matter, tabs are forbidden."                         |
+| **YAML Syntax Errors**            | Incorrect indentation (common with pros new to YAML).                        | Use a VS Code YAML extension or an online linter. Remind them: "Spaces matter, tabs are forbidden."                         |
 | **Model Test Flakiness**          | Model performance fluctuates slightly on different hardware or random seeds. | Teach students to use fixed random seeds and "tolerance ranges" (e.g., `assert accuracy > 0.80`) rather than exact matches. |
 | **Docker image too large**        | Including datasets or heavy virtual environments in the image.               | Use `.dockerignore` to exclude data folders and explain "Multi-stage builds."                                               |
 
