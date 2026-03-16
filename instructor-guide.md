@@ -1,85 +1,75 @@
 # Instructor Guide: Continuous Integration Pipelines
 
 ## Module Overview
-In this module, instructors will guide students through the mechanics of Continuous Integration (CI) and Continuous Deployment (CD) within an AI context. Moving a machine learning model from a prototype to a production environment is a major bottleneck. This session teaches mid-career professionals how to automate testing, build verification, and deployment workflows using PyTest, GitHub Actions, and Kubernetes to drastically reduce operational risk and human error.
+
+In this module, professionals will explore the critical role of CI pipelines in AI Systems Engineering. The focus is on moving beyond simple code integration to "Reliability-First" automation, where model performance, data integrity, and environment consistency (via Docker) are validated automatically before any deployment occurs.
 
 ## Learning Objectives
+
 By the end of this session, students will be able to:
-* Describe how CI pipelines automate model testing and deployment.
-* Build a simple CI workflow using open-source tools.
-* Evaluate the impact of automation on reliability and deployment speed.
+
+* **Describe** how CI pipelines automate model testing and deployment to ensure system integrity.
+* **Build** a functional CI workflow using GitHub Actions and Docker to containerize and verify AI applications.
+* **Evaluate** the impact of automation on system reliability and deployment velocity.
 
 ## Session Pacing Guide (120 Minutes total)
 
-| Duration   | Segment                            | Instructor Action                                                                                                                        |
-|:-----------|:-----------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|
-| **10 min** | **Introduction & Module Overview** | Hook the class: Ask who has ever broken production because they forgot to run a test script locally before deploying.                    |
-| **20 min** | **Automating Model Testing**       | Discuss the difference between traditional software tests (logic) and ML tests (data shapes, schema validation, evaluation metrics).     |
-| **30 min** | **Building a Workflow & Tooling**  | Live whiteboard the CI/CD architecture. Show a minimal `.github/workflows/main.yml` file and explain how GitHub Actions triggers PyTest. |
-| **60 min** | **Lab: Pipeline Builder**          | Facilitate the hands-on lab. Assist students with YAML formatting, GitHub Secrets, and reading build logs.                               |
+| Duration   | Segment                     | Instructor Action                                                                                                                        |
+|------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| **20 min** | **CI in the AI Lifecycle**  | Discuss the difference between traditional CI and AI CI (testing code vs. testing models/data). Use a diagram to show the feedback loop. |
+| **40 min** | **GitHub Actions & Docker** | Live demo: Create a `.github/workflows` file. Show a failing build due to a "Model Accuracy" test. Build a Docker image live.            |
+| **60 min** | **Lab: Pipeline Builder**   | Facilitate the lab where students build their own CI pipeline. Assist with YAML syntax and Docker daemon issues.                         |
 
 ---
 
 ## Delivery Notes & Teaching Tips
 
-### 1. Automating Model Testing and Deployment
-* **The "Shift Left" Concept:** Mid-career professionals need to understand that CI forces quality checks earlier in the process (shifting left). If a model fails an evaluation metric (like falling below a baseline F1-score), the build should break *before* it ever reaches the container registry.
-* **Visual Aid:**  Use this to show the hard boundary between the developer's laptop and the deployment target. 
+### 1. Automation as a Reliability Tool
 
-### 2. Building a Simple CI Workflow (The Tooling)
-* **Demystifying the Magic:** CI platforms can seem like magic to data scientists. Break it down: GitHub Actions is literally just an on-demand virtual machine (usually Ubuntu) that checks out their code and runs bash commands sequentially. 
-* **Whiteboarding the Flow:** Draw this out or use the Mermaid diagram below to explain the sequence of operations.
+* **The "Safety Net" Analogy:** Explain that CI is not about "working faster," but about "failing faster" in a controlled environment.
+* **Career Context:** Professionals often worry about the overhead of CI. Emphasize that the initial setup time is an investment that prevents "3 AM production outages" caused by human error.
+
+### 2. The CI/CD Flow
 
 ```mermaid
-graph TD
-    A[Data Scientist commits code/model] -->|Triggers| B(GitHub Actions Runner);
-    B --> C{Run PyTest Suite};
-    C -->|Pass| D[Build Docker Image];
-    C -->|Fail| E[Halt Pipeline & Alert];
-    D --> F[Push to Registry];
-    F --> G[Deploy to Kubernetes];
+graph LR
+    A[Code Commit] --> B{GitHub Actions};
+    B --> C[Unit Tests];
+    B --> D[Model Gate];
+    C & D -->|Pass| E[Docker Build];
+    E --> F[Push to Registry];
+    F --> G[Deploy];
+    D -->|Fail| H[Block Release];
 
 ```
 
-### 3. Evaluating the Impact on Reliability
+---
 
-* **Culture Shift:** Emphasize that automation changes team dynamics. It removes the "gatekeeper" mentality where one senior engineer does all deployments manually, empowering the whole team to deploy safely while mitigating deployment bottlenecks.
+## Common Student Issues & Solutions
+
+| Issue                             | Potential Cause                                                              | Solution                                                                                                                    |
+|-----------------------------------|------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| **Action fails on "Permissions"** | The GITHUB_TOKEN doesn't have write access to the repository or packages.    | Navigate to **Settings > Actions > General** and ensure "Read and write permissions" are enabled.                           |
+| **Docker Build is slow**          | Not utilizing Docker Layer Caching in the CI runner.                         | Introduce the `docker/build-push-action` with cache-from and cache-to parameters.                                           |
+| **YAML Syntax Errors**            | Incorrect indentation (common with mid-career pros new to YAML).             | Use a VS Code YAML extension or an online linter. Remind them: "Spaces matter, tabs are forbidden."                         |
+| **Model Test Flakiness**          | Model performance fluctuates slightly on different hardware or random seeds. | Teach students to use fixed random seeds and "tolerance ranges" (e.g., `assert accuracy > 0.80`) rather than exact matches. |
+| **Docker image too large**        | Including datasets or heavy virtual environments in the image.               | Use `.dockerignore` to exclude data folders and explain "Multi-stage builds."                                               |
 
 ---
 
-## Lab Guide: Pipeline Builder
+## Debrief Questions
 
-**Lab Objective:** Create a simple CI/CD pipeline that builds and deploys a Docker app automatically using GitHub Actions and Kubernetes. Learners experience how automation reduces human error and improves release speed.
-
-### Setup
-
-* Ensure students have their GitHub accounts ready.
-* Ensure students have access to the starter repository containing a basic Python ML API and a `test_api.py` file.
-* Provide the required GitHub Secrets (e.g., Docker Hub tokens) needed to push images during the lab.
-
-### Common Student Issues & Solutions
-
-| Student Issue                                                               | Root Cause                                                                                                      | Instructor Solution                                                                                                                                                                                        |
-|-----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **"My GitHub Action failed with a YAML parsing error."**                    | YAML is strictly reliant on spaces (not tabs) for indentation. A single misaligned block breaks the workflow.   | Have the student use an IDE with a YAML formatter (like VS Code) or point out the exact line number referenced in the GitHub Actions error log.                                                            |
-| **"The PyTest step failed, but my Docker image still built and deployed!"** | The pipeline steps are not correctly chained, or the test script is returning a `0` exit code even on failure.  | Ensure the `build` step explicitly depends on the `test` step in the workflow file. Teach them how to properly assert failures in PyTest.                                                                  |
-| **"Authentication failed when pushing the Docker image."**                  | The `DOCKER_USERNAME` or `DOCKER_PASSWORD` secrets are missing or incorrectly named in the repository settings. | Walk them through the Repository Settings -> Secrets and Variables -> Actions menu to verify their credentials are injected properly.                                                                      |
-| **"The AI gave me a GitHub Actions syntax that doesn't exist."**            | AI models sometimes hallucinate deprecated CI syntax or mix GitLab CI syntax with GitHub Actions.               | If the AI gives a complex or weird answer for a CI configuration, teach students to cross-reference. "Ask the AI: *'Are you sure? Can you verify that against the latest GitHub Actions documentation?'*". |
-
-### Debrief Questions
-
-At the end of the lab, ask:
-
-1. "In our lab, we tested the API endpoint's response. How would you modify this pipeline to test the *accuracy* of the model using a validation dataset before deployment?"
-2. "Why is it important to have your CI pipeline build a fresh Docker image rather than pushing an image built on your local laptop?"
+1. "If a model passes all code unit tests but drops 5% in accuracy, should the CI pipeline fail? Why?"
+2. "How does using Docker prevent the 'It worked on my machine' excuse during a production failure?"
+3. "What is one manual step in your current work process that could be automated by a GitHub Action tomorrow?"
 
 ---
 
 ## Resources for the Instructor
 
 * **Reference:** 
-  * [GitHub Actions: Understanding the CI/CD Workflow](https://docs.github.com/en/actions/learn-github-actions/understanding-github-actions)
-  * [PyTest Fixtures and Best Practices](https://docs.pytest.org/en/6.2.x/fixture.html)
-* **AI Prompt Bank:** Keep these handy to share with students who are stuck:
-  * *"Write a GitHub Actions YAML step to install Python 3.9 and install dependencies from a requirements.txt file."*
-  * *"How do I write a PyTest function to check if a Pandas DataFrame has any missing values before passing it to my machine learning model?"*
+  * [GitHub Actions Documentation](https://docs.github.com/en/actions) 
+  * [Docker Best Practices for Python/AI](https://docs.docker.com/language/python/)
+* **AI Prompt Bank:**
+  * *"Create a GitHub Action YAML that runs pytest and then builds a Docker image only if tests pass."*
+  * *"Explain the difference between a 'Runner' and a 'Workflow' in GitHub Actions."*

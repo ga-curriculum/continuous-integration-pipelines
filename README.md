@@ -1,245 +1,199 @@
-# Continuous Integration Pipelines
+# Continuous Integration Pipelines: Automating AI Reliability
 
 **Session Time:** 120 minutes
 
 ---
 
-## Module Overview
+## Table of Contents
+1. Introduction to CI for AI Systems
+2. Automating Model Testing and Deployment
+3. Building Workflows with GitHub Actions and Docker
+4. Evaluating Automation Impact on Reliability
+5. Lab: Pipeline Builder
+6. Wrap-Up and Reflection
 
-Explore continuous integration (CI) pipelines and how they streamline model and system updates. Moving from a prototype to production can be challenging, often creating deployment bottlenecks. Learn to automate testing, build verification, and deployment workflows for reliability, ensuring that every code or model change is systematically validated before it reaches your users.
+---
+
+## Learning Objectives
+
+By the end of this module, participants will be able to:
+
+1. **Describe** how CI pipelines automate model testing and deployment to ensure system integrity.
+2. **Build** a functional CI workflow using GitHub Actions and Docker to containerize and verify AI applications.
+3. **Evaluate** the impact of automation on system reliability and deployment velocity within an MLOps context.
 
 ---
 
 ## Session Breakdown
 
-| Segment | Topic                                   | Duration (minutes) |
-|---------|-----------------------------------------|--------------------|
-| 1       | Introduction & Automating Model Testing | 20                 |
-| 2       | Building a Simple CI Workflow & Tooling | 30                 |
-| 3       | Evaluating the Impact on Reliability    | 10                 |
-| 4       | Lab: Pipeline Builder                   | 60                 |
-
----
-
-## Table of Contents
-1. Automating Model Testing and Deployment
-2. Building a Simple CI Workflow
-3. Evaluating the Impact of Automation
-4. Tooling Deep Dive: PyTest, GitHub Actions, and Kubernetes
-5. Lab Reference: Pipeline Builder
-6. Wrap-Up and Reflection
+| Segment | Topic                                          | Duration (minutes) |
+|---------|------------------------------------------------|--------------------|
+| 1       | The Role of CI in AI Systems Engineering       | 15                 |
+| 2       | Deep Dive: GitHub Actions & Docker Integration | 25                 |
+| 3       | Metrics for Reliability and Speed              | 20                 |
+| 4       | Lab: Pipeline Builder                          | 60                 |
 
 ---
 
 ## 1. Automating Model Testing and Deployment
 
-**Learning Objective:** Describe how CI pipelines automate model testing and deployment.
+In the context of **AI Systems Engineering & Reliability**, CI/CD is the engine that ensures your models and infrastructure are robust, reproducible, and ready for production.
 
-In traditional software engineering, Continuous Integration (CI) means automatically building and testing code every time a developer commits a change. In AI Systems Engineering, CI is more complex. You are not just testing Python logic; you are validating the "Evaluation & Validation" metrics of the model itself. 
+### What is Continuous Integration (CI)?
 
-A robust ML CI pipeline automatically verifies that new model weights meet accuracy thresholds, that the input data schema hasn't drifted, and that the inference latency remains within acceptable Service Level Objectives (SLOs).
+The practice of automating the integration of code changes from multiple contributors into a single software project. For AI, this includes running **Unit Tests** (code logic) and **Model Validation** (accuracy/drift checks).
+
+### GitHub Actions: The Orchestrator
+
+GitHub Actions is the tool that executes these steps. It uses **Workflows** (YAML files) to listen for events like a `git push` and then triggers **Jobs** on virtual machines called **Runners**.
+
+### CI/CD Workflow Diagram
+
+This diagram visualizes how a code change travels from a developer's machine to a live environment using GitHub Actions and Docker.
+
+```mermaid
+graph TD
+    %% Developer Phase
+    Dev[Developer pushes code/model] -->|Trigger: push/PR| GHA{GitHub Actions}
+
+    %% CI Phase (Continuous Integration)
+    subgraph CI_Pipeline [CI: Build & Test]
+        GHA --> Checkout[Checkout Code]
+        Checkout --> Setup[Setup Environment<br/>Python/Node]
+        Setup --> Lint[Linting & Static Analysis]
+        Lint --> Tests[Run Unit Tests]
+        Tests --> ModelVal[Model Accuracy Validation]
+    end
+
+    %% Deployment Phase
+    subgraph CD_Pipeline [Package & Deploy]
+        ModelVal -->|Pass| Build[Build Docker Image]
+        Build --> Push[Push to Container Registry]
+        Push --> Deploy[Deploy to Staging/Prod]
+    end
+
+    %% Feedback Loop
+    ModelVal -->|Fail| Notify[Notify Developer]
+    Deploy -->|Success| Mon[Monitor Reliability]
+
+```
+
+### Key Tools in the Pipeline:
+
+1. **GitHub Actions:** Acts as the "Control Plane" of your automation.
+2. **Docker:** Ensures the "Environment" is identical across testing and production.
+3. **Pytest:** Used within the pipeline to validate code and data quality.
 
 
-### **Practical Example: The "Poisoned" Pull Request**
-A data scientist on your team fine-tunes a churn prediction model and pushes the updated `model.pkl` file to the main branch. However, they accidentally trained it on a dataset missing the `customer_age` column. Without CI, this broken model deploys, and the production API crashes. *With* a CI pipeline, the automated system intercepts the commit, runs a schema validation script, detects the missing feature, fails the build, and blocks the deployment. The pipeline catches the error before the customer ever experiences it.
 
----
+> Unlike traditional software, AI CI must account for **data validation** and **model performance regression**.
 
-## 2. Building a Simple CI Workflow
 
-**Learning Objective:** Build a simple CI workflow using open-source tools.
-
-Building a CI workflow involves linking triggers (e.g., a code commit) to automated jobs (e.g., running tests, building a Docker image). Modern platforms allow you to define these workflows declaratively using YAML files.
+### The Workflow Logic
+Automation removes the "manual hand-off" risk. When a data scientist pushes a new model version or an engineer updates the API wrapper, the pipeline immediately triggers a suite of tests to ensure the system doesn't break.
 
 ```mermaid
 graph LR
-    %% Define styles
-    classDef trigger fill:#e6f7ff,stroke:#1890ff,stroke-width:2px,color:#000;
-    classDef job fill:#f6ffed,stroke:#52c41a,stroke-width:2px,color:#000;
-    classDef deploy fill:#fff7e6,stroke:#fa8c16,stroke-width:2px,color:#000;
-    classDef fail fill:#fff1f0,stroke:#f5222d,stroke-width:2px,color:#000;
-
-    Developer([Data Scientist]) -->|Git Push| Repo[GitHub Repository]:::trigger
-    
-    Repo -->|Triggers| CI[CI Server / Runner]:::trigger
-    
-    subgraph CI_Pipeline [Automated CI Pipeline]
-        direction TB
-        Test[1. Run PyTest Unit Tests]:::job
-        Eval[2. Model Evaluation Check]:::job
-        Build[3. Build Docker Image]:::job
-        
-        Test --> Eval --> Build
-    end
-    
-    CI --> CI_Pipeline
-    
-    Build -->|Success| Registry[(Container Registry)]:::deploy
-    Eval -->|Accuracy < 90%| Alert[Fail Build & Alert Team]:::fail
+    A[Code/Model Push] --> B{CI Pipeline};
+    B --> C[Linting & Unit Tests];
+    B --> D[Model Accuracy Check];
+    B --> E[Container Build];
+    E --> F{Status};
+    F -->|Success| G[Artifact Registry];
+    F -->|Failure| H[Notify Developer];
 
 ```
 
-To build reliable AI systems, you need to ensure that every code or model update is systematically validated before it reaches your users. This is where **PyTest** and **GitHub Actions** work together to automate the "Deployment & Monitoring" phase of your machine learning workflow.
+### Technical Detail: Why Automate?
 
+* **Consistency:** Every build happens in the exact same environment.
+* **Early Detection:** Identify "dependency hell" or model performance drops before they reach staging.
+* **Traceability:** Every deployment is linked to a specific commit hash.
 
-### PyTest (The Testing Framework)
+---
 
-**PyTest** is a mature, fully-featured Python testing framework. In traditional software, you test business logic. In an AI context, you use PyTest to validate data preprocessing functions, check input data schemas, and ensure your model's inference endpoints return the correct data types and shapes.
+## 2. Building Workflows with GitHub Actions and Docker
 
-**Practical Example:**
-Imagine you have a function `predict_churn(customer_data)` that should always return a probability between 0.0 and 1.0. You write a PyTest script (`test_model.py`) to automatically verify this behavior.
+To move from theory to practice, we utilize **GitHub Actions** for orchestration and **Docker** for environment consistency.
 
-```python
-# test_model.py
-import pytest
-from my_ml_app import predict_churn
+### GitHub Actions
 
-def test_predict_churn_output_bounds():
-    # 1. Provide mock input data
-    mock_customer = {"age": 35, "monthly_spend": 120}
-    
-    # 2. Get the model's prediction
-    prediction = predict_churn(mock_customer)
-    
-    # 3. Assert the prediction is a float and within valid probability bounds
-    assert isinstance(prediction, float)
-    assert 0.0 <= prediction <= 1.0
+GitHub Actions is an automation platform that allows you to define workflows via YAML files stored in your repository. It acts as the "brain" of your CI pipeline.
 
-```
+### Docker
 
-### GitHub Actions (The Automation Engine)
+Docker allows you to package an AI application with all its dependencies (Python libraries, CUDA drivers, model weights) into a single container. This ensures that "it works on my machine" translates to "it works in production."
 
-**GitHub Actions** is a Continuous Integration and Continuous Deployment (CI/CD) platform integrated directly into GitHub. It allows you to define automated workflows using declarative YAML files. Instead of running `pytest` manually on your laptop (which is prone to human error), GitHub Actions provisions a temporary server to run your test suite every time a developer pushes new code.
+### Practical Example: A Simple CI YAML
 
-**Practical Example:**
-You create a configuration file in your repository at `.github/workflows/ci.yml`. This file tells GitHub: *"Every time someone pushes code to the main branch, spin up an Ubuntu server, install Python, and run my PyTest suite."*
+You might manage a workflow that builds a Docker image only if the Python tests pass. As a reliability engineer, you wouldn't just test if the code "runs"—you'd test if the model meets a specific **Reliability Threshold**.
+
+**File:** `.github/workflows/verify-ai-system.yml`
 
 ```yaml
-# .github/workflows/ci.yml
-name: AI Model CI Pipeline
+# .github/workflows/ai-ci-pipeline.yml
+name: AI System CI
 
-on:
-  push:
-    branches: [ "main" ]
+on: [push]
 
 jobs:
-  test-model:
+  test-and-build:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Check out the repository code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.9"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pytest
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
 
-    - name: Run PyTest suite
-      run: pytest test_model.py
+      - name: Reliability Gate (Accuracy & Latency)
+        run: |
+          # Custom script to ensure model latency < 200ms 
+          # and accuracy > 92%
+          python scripts/verify_metrics.py 
 
-```
-
-### How They Work Together
-
-PyTest provides the *logic* to verify your system is healthy, while GitHub Actions provides the *infrastructure* to ensure those checks are executed consistently. 
-
-If PyTest encounters an error (e.g., your model returns a string instead of a float), GitHub Actions will detect the failed test, mark the commit with a red "X", and block the broken model from being deployed to production.
-
-```mermaid
-graph LR
-    %% Define styles
-    classDef developer fill:#f9f0ff,stroke:#722ed1,stroke-width:2px,color:#000;
-    classDef github fill:#e6f7ff,stroke:#1890ff,stroke-width:2px,color:#000;
-    classDef test fill:#fffbe6,stroke:#ffe58f,stroke-width:2px,color:#000;
-    classDef resultPass fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
-    classDef resultFail fill:#f8d7da,stroke:#dc3545,stroke-width:2px,color:#000;
-
-    Dev([ML Engineer]):::developer -->|1. git push| Repo[GitHub Repository]:::github
-    
-    Repo -->|2. Triggers ci.yml| Runner[GitHub Actions Runner]:::github
-    
-    Runner -->|3. Executes| PyTest[PyTest: test_model.py]:::test
-    
-    PyTest -->|Asserts True| Pass[✅ Build Passes<br/>Ready for Deployment]:::resultPass
-    PyTest -->|Asserts False| Fail[❌ Build Fails<br/>Deployment Blocked]:::resultFail
+      - name: Build Docker Image
+        if: success()
+        run: docker build -t ai-service:latest .
 
 ```
 
+---
 
-### **Practical Example: The YAML Blueprint**
-To build this, you write a configuration file stored directly in your repository (e.g., `.github/workflows/ci.yml`). This file dictates that every time a pull request is opened, an isolated server spins up, installs the dependencies listed in `requirements.txt`, runs the tests, and reports the green checkmark (success) or red cross (failure) back to the GitHub UI.
+## 3. Evaluating Automation Impact on Reliability
+
+Automation is not just about speed; it is a primary driver of **Reliability Engineering**. The focus shifts from "how to build" to "how it impacts the bottom line."
+
+### Key Reliability Metrics
+
+| Metric                           | Definition                                | Impact of CI                                                           |
+|----------------------------------|-------------------------------------------|------------------------------------------------------------------------|
+| **Mean Time to Recovery (MTTR)** | Time taken to fix a failure.              | Decreased: Automated rollbacks and fast builds resolve issues quicker. |
+| **Change Failure Rate**          | % of changes leading to degraded service. | Decreased: Automated testing catches bugs before they ship.            |
+| **Deployment Frequency**         | How often code is successfully deployed.  | Increased: Confidence in automation allows for more frequent updates.  |
+
+### Practical Scenario: The "Silent Failure"
+
+Imagine a model update that passes code linting but has a 20% drop in accuracy. A robust CI pipeline includes a **Model Threshold Gate**. If the `accuracy_score < 0.85`, the Docker build is killed, preventing a "broken" brain from being deployed to your users.
 
 ---
 
-## 3. Evaluating the Impact of Automation
+## 4. Lab: Pipeline Builder
 
-**Learning Objective:** Evaluate the impact of automation on reliability and deployment speed.
+**Objective:** Create a simple CI/CD pipeline that builds and deploys a Docker app automatically. Learners experience how automation reduces human error and improves release speed.
 
-Manual deployments require an engineer to SSH into a server, pull code, install packages, and restart services. This introduces massive operational risk. Automation eliminates human error, directly mitigating deployment bottlenecks.
-
-* **Reliability:** CI ensures that *every* deployment goes through the exact same rigorous validation process. There are no skipped steps because an engineer was in a rush.
-* **Speed:** By removing manual QA bottlenecks, teams can deploy small, incremental updates multiple times a day rather than batching massive, risky updates once a month.
-
-**Practical Example: The Friday Afternoon Deploy**
-Without CI, deploying a model update on a Friday afternoon is terrifying because a manual mistake could mean working all weekend. With a robust CI/CD pipeline, the system automatically runs a comprehensive test suite. If the tests pass, the team knows with mathematical certainty that the core application logic is sound, making Friday deployments routine and stress-free.
+[Link to Lab: Pipeline Builder]
 
 ---
 
-## 4. Tooling Deep Dive: PyTest, GitHub Actions, and Kubernetes
-
-To execute these CI/CD workflows, engineers orchestrate a combination of specialized tools.
-
-### **PyTest (The Testing Framework)**
-
-PyTest is a mature, fully-featured Python testing tool that helps you write better programs. In an ML context, it is used to write unit tests for data preprocessing functions and integration tests for model endpoints.
-
-* **Practical Example:** You write a `test_inference.py` script using PyTest that sends a mock JSON payload to your model function. The test asserts that the model returns a predicted value between 0 and 1. The CI pipeline runs this test automatically.
-
-### **GitHub Actions (The CI/CD Runner)**
-
-GitHub Actions makes it easy to automate all your software workflows directly from GitHub. It provisions the temporary servers that run your CI pipelines.
-
-* **Practical Example:** You configure a GitHub Action to listen for any push to the `main` branch. When triggered, the Action spins up an Ubuntu virtual machine, checks out your code, runs your PyTest suite, and if successful, builds a Docker image of your model API.
-
-### **Kubernetes (The Deployment Target)**
-
-Kubernetes (K8s) is an open-source system for automating deployment, scaling, and management of containerized applications. It acts as the highly reliable destination for your CI pipeline's output.
-
-* **Practical Example:** After GitHub Actions successfully builds and tests your Docker image, the final step of the pipeline pushes that image to a registry and updates your Kubernetes cluster. Kubernetes then automatically performs a "rolling update," spinning up the new version of your model and gradually routing user traffic to it while tearing down the old version, ensuring zero downtime.
-
----
-
-## 5. Lab Reference: Pipeline Builder
-
-**Lab Objective:** Create a simple CI/CD pipeline that builds and deploys a Docker app automatically. Learners experience how automation reduces human error and improves release speed.
-
-*Note: Please refer to the dedicated Lab Guide for the YAML starter templates, GitHub repository setup instructions, and Kubernetes cluster access details.*
-
-**Tools Required:**
-
-* PyTest
-* GitHub Actions
-* Kubernetes (via Minikube or cloud provider)
-
----
-
-## Wrap-Up and Reflection
+## 6. Wrap-Up and Reflection
 
 **Reflection Questions:**
 
-1. How does a CI pipeline change the code review process between a Data Scientist and an ML Engineer?
-2. If your automated tests pass, but the deployed model still degrades in production, what observability tools from our previous modules would you use to catch the issue?
-
----
-
-## Resources
-
-* [GitHub Actions Documentation](https://docs.github.com/en/actions)
-* [PyTest Official Documentation](https://docs.pytest.org/)
-* [Kubernetes Basics](https://kubernetes.io/docs/tutorials/kubernetes-basics/)
+1. How does containerizing an AI model with Docker specifically address the "Environment Drift" problem in reliability?
+2. In your current organization, what is the most manual (and therefore risky) part of your deployment process that could be handled by a GitHub Action?
