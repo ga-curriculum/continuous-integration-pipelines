@@ -14,11 +14,11 @@ By the end of this session, students will be able to:
 
 ## Session Pacing Guide (120 Minutes total)
 
-| Duration   | Segment                     | Instructor Action                                                                                                                        |
-|------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| **20 min** | **CI in the AI Lifecycle**  | Discuss the difference between traditional CI and AI CI (testing code vs. testing models/data). Use a diagram to show the feedback loop. |
-| **40 min** | **GitHub Actions & Docker** | Live demo: Create a `.github/workflows` file. Show a failing build due to a "Model Accuracy" test. Build a Docker image live.            |
-| **60 min** | **Lab: Pipeline Builder**   | Facilitate the lab where students build their own CI pipeline. Assist with YAML syntax and Docker daemon issues.                         |
+| Duration   | Segment                     | Instructor Action                                                                                                                                                                                                                                                          |
+|------------|-----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **20 min** | **CI in the AI Lifecycle**  | Discuss the difference between traditional CI and AI CI (testing code vs. testing models/data). Use a diagram to show the feedback loop.                                                                                                                                   |
+| **40 min** | **GitHub Actions & Docker** | Live demo: Focus on *reading* and *interpreting* a workflow rather than authoring one live. Show a failing build due to a "Model Accuracy" test and build a Docker image. It is highly recommended to use a pre-prepared repository with a failing workflow ready to show. |
+| **60 min** | **Lab: Pipeline Builder**   | Facilitate the lab where students build their own CI pipeline. Assist with YAML syntax and Docker daemon issues.                                                                                                                                                           |
 
 ---
 
@@ -40,20 +40,20 @@ graph LR
     E --> F[Push to Registry];
     F --> G[Deploy];
     D -->|Fail| H[Block Release];
-
 ```
+
 
 ---
 
 ## Common Student Issues & Solutions
 
-| Issue                             | Potential Cause                                                              | Solution                                                                                                                    |
-|-----------------------------------|------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| **Action fails on "Permissions"** | The GITHUB_TOKEN doesn't have write access to the repository or packages.    | Navigate to **Settings > Actions > General** and ensure "Read and write permissions" are enabled.                           |
-| **Docker Build is slow**          | Not utilizing Docker Layer Caching in the CI runner.                         | Introduce the `docker/build-push-action` with cache-from and cache-to parameters.                                           |
-| **YAML Syntax Errors**            | Incorrect indentation (common with pros new to YAML).                        | Use a VS Code YAML extension or an online linter. Remind them: "Spaces matter, tabs are forbidden."                         |
-| **Model Test Flakiness**          | Model performance fluctuates slightly on different hardware or random seeds. | Teach students to use fixed random seeds and "tolerance ranges" (e.g., `assert accuracy > 0.80`) rather than exact matches. |
-| **Docker image too large**        | Including datasets or heavy virtual environments in the image.               | Use `.dockerignore` to exclude data folders and explain "Multi-stage builds."                                               |
+| Issue                             | Potential Cause                                                              | Solution                                                                                                                                                                                |
+|-----------------------------------|------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Action fails on "Permissions"** | The GITHUB_TOKEN doesn't have write access to the repository or packages.    | Navigate to **Settings > Actions > General** and ensure "Read and write permissions" are enabled.                                                                                       |
+| **Docker Build is slow**          | Not utilizing Docker Layer Caching in the CI runner.                         | Introduce the `docker/build-push-action` with cache-from and cache-to parameters.                                                                                                       |
+| **YAML Syntax Errors**            | Incorrect indentation (common with pros new to YAML).                        | Recommend using `actionlint`, which is a purpose-built linter that catches GitHub Actions-specific errors generic linters might miss. Remind them: "Spaces matter, tabs are forbidden". |
+| **Model Test Flakiness**          | Model performance fluctuates slightly on different hardware or random seeds. | Teach students to use fixed random seeds and "tolerance ranges" (e.g., `assert accuracy > 0.80`) rather than exact matches.                                                             |
+| **Docker image too large**        | Including datasets or heavy virtual environments in the image.               | Use `.dockerignore` to exclude data folders and explain "Multi-stage builds".                                                                                                           |
 
 ---
 
@@ -68,8 +68,9 @@ graph LR
 ## Resources for the Instructor
 
 * **Reference:** 
-  * [GitHub Actions Documentation](https://docs.github.com/en/actions) 
+  * [GitHub Actions Documentation](https://docs.github.com/en/actions)
   * [Docker Best Practices for Python/AI](https://docs.docker.com/language/python/)
+  * [actionlint Repository](https://github.com/rhysd/actionlint)
 * **AI Prompt Bank:**
   * *"Create a GitHub Action YAML that runs pytest and then builds a Docker image only if tests pass."*
   * *"Explain the difference between a 'Runner' and a 'Workflow' in GitHub Actions."*

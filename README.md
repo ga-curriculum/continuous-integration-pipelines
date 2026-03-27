@@ -5,7 +5,7 @@
 ---
 
 ## Table of Contents
-1. Introduction to CI for AI Systems
+1. The Role of CI in AI Systems Engineering
 2. Automating Model Testing and Deployment
 3. Building Workflows with GitHub Actions and Docker
 4. Evaluating Automation Impact on Reliability
@@ -26,22 +26,30 @@ By the end of this module, participants will be able to:
 
 ## Session Breakdown
 
-| Segment | Topic                                          | Duration (minutes) |
-|---------|------------------------------------------------|--------------------|
-| 1       | The Role of CI in AI Systems Engineering       | 15                 |
-| 2       | Deep Dive: GitHub Actions & Docker Integration | 25                 |
-| 3       | Metrics for Reliability and Speed              | 20                 |
-| 4       | Lab: Pipeline Builder                          | 60                 |
+| Segment | Topic                                             | Duration (minutes) |
+|---------|---------------------------------------------------|--------------------|
+| 1       | The Role of CI in AI Systems Engineering          | 15                 |
+| 2       | Automating Model Testing and Deployment           | 25                 |
+| 3       | Building Workflows with GitHub Actions and Docker | 20                 |
+| 4       | Evaluating Automation Impact on Reliability       | 60                 |
+
+*(Note: The above table aggregates the lab time into the final segment to match the 120-minute total)*
 
 ---
 
-## 1. Automating Model Testing and Deployment
+## 1. The Role of CI in AI Systems Engineering
 
 In the context of **AI Systems Engineering & Reliability**, CI/CD is the engine that ensures your models and infrastructure are robust, reproducible, and ready for production.
 
 ### What is Continuous Integration (CI)?
 
-The practice of automating the integration of code changes from multiple contributors into a single software project. For AI, this includes running **Unit Tests** (code logic) and **Model Validation** (accuracy/drift checks).
+The practice of automating the integration of code changes from multiple contributors into a single software project. For AI, this includes running **Unit Tests** (code logic) and **Model Validation** (accuracy/drift checks). Unlike traditional software, AI CI must account for **data validation** and **model performance regression**.
+
+---
+
+## 2. Automating Model Testing and Deployment
+
+Automation removes the "manual hand-off" risk. When a data scientist pushes a new model version or an engineer updates the API wrapper, the pipeline immediately triggers a suite of tests to ensure the system doesn't break.
 
 ### GitHub Actions: The Orchestrator
 
@@ -75,54 +83,25 @@ graph TD
     %% Feedback Loop
     ModelVal -->|Fail| Notify[Notify Developer]
     Deploy -->|Success| Mon[Monitor Reliability]
-
 ```
 
 ### Key Tools in the Pipeline:
 
-1. **GitHub Actions:** Acts as the "Control Plane" of your automation.
-2. **Docker:** Ensures the "Environment" is identical across testing and production.
-3. **Pytest:** Used within the pipeline to validate code and data quality.
-
-
-
-> Unlike traditional software, AI CI must account for **data validation** and **model performance regression**.
-
-
-### The Workflow Logic
-Automation removes the "manual hand-off" risk. When a data scientist pushes a new model version or an engineer updates the API wrapper, the pipeline immediately triggers a suite of tests to ensure the system doesn't break.
-
-```mermaid
-graph LR
-    A[Code/Model Push] --> B{CI Pipeline};
-    B --> C[Linting & Unit Tests];
-    B --> D[Model Accuracy Check];
-    B --> E[Container Build];
-    E --> F{Status};
-    F -->|Success| G[Artifact Registry];
-    F -->|Failure| H[Notify Developer];
-
-```
-
-### Technical Detail: Why Automate?
-
-* **Consistency:** Every build happens in the exact same environment.
-* **Early Detection:** Identify "dependency hell" or model performance drops before they reach staging.
-* **Traceability:** Every deployment is linked to a specific commit hash.
+1. **GitHub Actions:** 
+   
+   Acts as the "Control Plane" of your automation.
+2. **Docker:** 
+   
+   Ensures the "Environment" is identical across testing and production. Specifically, Docker ensures the *inference environment* matches the *training environment*—including Python versions, library versions, and CUDA drivers. A model trained with scikit-learn 1.3 will silently produce wrong results if deployed against scikit-learn 1.1, making Docker crucial for preventing this ML-specific mismatch.
+3. **Pytest:** 
+   
+   Used within the pipeline to validate code and data quality.
 
 ---
 
-## 2. Building Workflows with GitHub Actions and Docker
+## 3. Building Workflows with GitHub Actions and Docker
 
 To move from theory to practice, we utilize **GitHub Actions** for orchestration and **Docker** for environment consistency.
-
-### GitHub Actions
-
-GitHub Actions is an automation platform that allows you to define workflows via YAML files stored in your repository. It acts as the "brain" of your CI pipeline.
-
-### Docker
-
-Docker allows you to package an AI application with all its dependencies (Python libraries, CUDA drivers, model weights) into a single container. This ensures that "it works on my machine" translates to "it works in production."
 
 ### Practical Example: A Simple CI YAML
 
@@ -160,16 +139,24 @@ jobs:
       - name: Build Docker Image
         if: success()
         run: docker build -t ai-service:latest .
-
 ```
+
+### Understanding the `verify_metrics.py` Reliability Gate
+The `verify_metrics.py` script serves as the reliability gate for the pipeline. This script connects directly to observability concepts by checking specific accuracy and latency thresholds—the very same metrics surfaced by Prometheus Gauges and Histograms covered in earlier labs. If the metrics fall below the defined thresholds, the script uses exit code conventions to fail the workflow, ensuring a degraded model does not reach production.
+
+### Local Testing with `act`
+If you are working in a restricted environment (like a corporate firewall) or simply want to test your workflow locally before pushing to GitHub, you can use a tool called `act`. 
+
+> `act` runs GitHub Actions workflows locally using Docker, reducing the friction of slow feedback loops caused by runner queue times.
 
 ---
 
-## 3. Evaluating Automation Impact on Reliability
+## 4. Evaluating Automation Impact on Reliability
 
-Automation is not just about speed; it is a primary driver of **Reliability Engineering**. The focus shifts from "how to build" to "how it impacts the bottom line."
+Automation is not just about speed; it is a primary driver of **Reliability Engineering**. The focus shifts from "how to build" to "how it impacts the bottom line".
 
-### Key Reliability Metrics
+### Key Reliability Metrics (DORA Framework)
+These metrics belong to the DORA (DevOps Research and Assessment) framework. For extended reading, refer to the DORA State of DevOps Report.
 
 | Metric                           | Definition                                | Impact of CI                                                           |
 |----------------------------------|-------------------------------------------|------------------------------------------------------------------------|
@@ -183,11 +170,16 @@ Imagine a model update that passes code linting but has a 20% drop in accuracy. 
 
 ---
 
-## 4. Lab: Pipeline Builder
+## 5. Lab: Pipeline Builder
 
 **Objective:** Create a simple CI/CD pipeline that builds and deploys a Docker app automatically. Learners experience how automation reduces human error and improves release speed.
 
-[Link to Lab: Pipeline Builder]
+> [!NOTE]
+>
+> [**Lab: Pipeline Builder**](https://git.generalassemb.ly/ai-systems-engineering-reliability/lab-7-pipeline-builder)
+> 
+> **Note**: Please refer to the dedicated [**lab guide**](https://git.generalassemb.ly/ai-systems-engineering-reliability/lab-7-pipeline-builder)
+ for full instructions, architectural constraints, and deliverables.
 
 ---
 
