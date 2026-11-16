@@ -176,9 +176,9 @@ Imagine a model update that passes code linting but has a 20% drop in accuracy. 
 
 > [!NOTE]
 >
-> [**Lab: Pipeline Builder**](https://git.generalassemb.ly/ai-systems-engineering-reliability/lab-7-pipeline-builder)
+> [**Lab: Pipeline Builder**](https://github.com/ga-curriculum/lab-7-pipeline-builder)
 > 
-> **Note**: Please refer to the dedicated [**lab guide**](https://git.generalassemb.ly/ai-systems-engineering-reliability/lab-7-pipeline-builder)
+> **Note**: Please refer to the dedicated [**lab guide**](https://github.com/ga-curriculum/lab-7-pipeline-builder)
  for full instructions, architectural constraints, and deliverables.
 
 ---
